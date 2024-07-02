@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from PIL import Image
 import json
 import numpy as np
 import base64
@@ -333,6 +334,13 @@ for i in range (laufzeit+1):
 
         df_depot.loc[i, 'Steuerlast '] = df_depot.loc[i, 'nach Freistellungsauftrag']*steuerlast_sparplan #AE
         df_depot.loc[i, 'Kapital abzüglich Steuer'] = df_depot.loc[i, 'Umschichten'] - df_depot.loc[i, 'Steuerlast '] #AF
+
+#Logo
+logo_path = "ressources/demak.png"  # Adjust the path to your logo file
+logo = Image.open(logo_path)
+new_size = (int(logo.width * 1), int(logo.height * 1))
+resized_logo = logo.resize(new_size)
+st.image(resized_logo)
 
 # Display the DataFrame as a table in Streamlit
 st.markdown('### Fondspolice')
