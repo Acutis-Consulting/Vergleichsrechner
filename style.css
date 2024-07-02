@@ -15,6 +15,11 @@
     overflow: hidden;
 }
 
+[data-testid="stHeader"] {
+    background: #d6e8ee;
+    color: rgb(49, 51, 63);
+}
+
 /* Card */
 /* Adapted from https://startbootstrap.com/theme/sb-admin-2 */
 div.st-emotion-cache-1r6slb0.e1f1d6gn3 {
