@@ -5,6 +5,7 @@ import plost
 import json
 import numpy as np
 import base64
+import matplotlib.pyplot as plt
 import array
 
 
@@ -21,6 +22,10 @@ def format_german(value):
     v4 = v3.replace('#','.')
     v5 = v4.replace('%',',')
     return v5
+
+# Formatter function for the y-axis
+def euro_formatter(value):
+    return f'€ {value:,.0f}'.replace(',', '.').replace('.', ',')
 
 st.sidebar.header('Vergleichsrechner Einmaleinlage `version 1`')
 
@@ -314,7 +319,10 @@ for i in range (laufzeit+1):
         df_depot.loc[i, 'Jahresende nach Kosten'] = df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Kosten auf Fondsguthaben'] - df_depot.loc[i, 'Steuerlast']  #L
         df_depot.loc[i, 'Einzahlung'] = 0 #V
         df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN']*anteil_umschichtung #W %-Zahl einfügen
-        df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']*df_depot.loc[i, 'Umschichtung'] #X
+        if i == laufzeit:
+            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten'] #X
+        else:
+            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']*df_depot.loc[i, 'Umschichtung'] #X
         df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i-1, 'Erträgelaufend'] + df_depot.loc[i, 'Wertsteigerung'] #NICHT ANZEIGEN
         df_depot.loc[i, 'Erträge'] = df_depot.loc[i, 'Erträgelaufend']*df_depot.loc[i, 'UmschichtungJN'] #Z
         df_depot.loc[i, 'minus Vorabpauschale'] = (df_depot.loc[i, 'Erträgelaufend'] - df_depot.loc[i, 'Vorabpauschalelaufend'])*df_depot.loc[i, 'UmschichtungJN'] #AA
@@ -370,32 +378,12 @@ fondspolice_zu_besteuern_result = fondspolice_ertraege - fondspolice_teilfreiste
 fondspolice_hev_result = fondspolice_zu_besteuern_result/2
 fondspolice_steuerlast_result = fondspolice_hev_result * steuersatz_police
 fondspolice = fondspolice_rentenkapital - fondspolice_steuerlast_result
-col1.metric("Fondspolice",format_german(fondspolice))
-col1.metric("test12",format_german(1))
+col2.metric("Fondspolice",format_german(fondspolice))
+
+fondssparplan = df_depot.loc[i, 'Kapital abzüglich Steuer']
+col3.metric("Fondssparplan",format_german(fondssparplan))
 
 
-
-
-
-
-
-
-
-
-
-st.sidebar.subheader('Heat map parameter')
-time_hist_color = st.sidebar.selectbox('Color by', ('temp_min', 'temp_max'))
-st.sidebar.subheader('Donut chart parameter')
-donut_theta = st.sidebar.selectbox('Select data', ('q2', 'q3'))
-st.sidebar.subheader('Line chart parameters')
-plot_data = st.sidebar.multiselect('Select data', ['temp_min', 'temp_max'], ['temp_min', 'temp_max'])
-plot_height = st.sidebar.slider('Specify plot height', 200, 500, 250)
-
-
-st.sidebar.markdown('''
----
-Created with ❤️ by [Data Professor](https://youtube.com/dataprofessor/).
-''')
 
 # Add a button to trigger the save
 st.sidebar.title(' ')
@@ -444,61 +432,64 @@ if st.sidebar.button('Parameter Speichern'):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Row A
-st.markdown('### Metrics')
-col1, col2, col3 = st.columns(3)
-col1.metric("Temperature", "70 °F", "1.2 °F")
-col2.metric("Wind", "9 mph", "-8%")
-col3.metric("Humidity", "86%", "4%")
-
-st.markdown('### Test')
-st.number_input('Enter a number')
-
-# Row B
-seattle_weather = pd.read_csv('https://raw.githubusercontent.com/tvst/plost/master/data/seattle-weather.csv', parse_dates=['date'])
-stocks = pd.read_csv('https://raw.githubusercontent.com/dataprofessor/data/master/stocks_toy.csv')
-
-c1, c2 = st.columns((7,3))
-with c1:
-    st.markdown('### Heatmap')
-    plost.time_hist(
-        data=seattle_weather,
-        date='date',
-        x_unit='week',
-        y_unit='day',
-        color=time_hist_color,
-        aggregate='median',
-        legend=None,
-        height=345,
-        use_container_width=True)
-with c2:
-    st.markdown('### Donut chart')
-    plost.donut_chart(
-        data=stocks,
-        theta=donut_theta,
-        color='company',
-        legend='bottom',
-        use_container_width=True)
-
 # Row C
-st.markdown('### Line chart')
-st.line_chart(seattle_weather, x = 'date', y = plot_data, height = plot_height)
+categories = ['Fondspolice Rentenkapital', 'Fondspolice', 'Fondssparplan']
+values = [fondspolice_rentenkapital, fondspolice, fondssparplan]
 
+# Create two columns
+col1, col2 = st.columns(2)
+
+# Plot the bar chart with a light blue background
+with col1:
+    fig, ax = plt.subplots(figsize=(10, 6), facecolor='#d6e8ee')
+    ax.set_facecolor('#d6e8ee')
+    bars = ax.bar(categories, values, color=['#92d050', '#00a44a', '#00b0f0'])
+    ax.set_xlabel(' ')
+    ax.set_xticks(range(len(categories)))
+    ax.set_xticklabels(categories, rotation=0)  # Set the rotation of x-axis labels to 0 for horizontal labels
+    ax.set_yticks([])  # Remove y-axis scale
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    plt.tight_layout()
+
+    # Add numerical value on top of each bar
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2, yval + 10, f'{yval:,.0f} €'.replace(',', '.'), ha='center', va='bottom')
+
+    # Display the plot in Streamlit
+    st.pyplot(plt)
+
+with col2:
+    df_police_display = df_police
+    df_depot_display = df_depot
+    df_fondspolice_display = df_police
+    new_row1 = pd.DataFrame({'Jahr': [df_depot_display['Jahr'].max() + 1], 'Jahresende nach Kosten': [fondssparplan]})
+    new_row2 = pd.DataFrame({'Jahr': [df_fondspolice_display['Jahr'].max() + 1], 'Jahresende nach Kosten': [fondspolice]})
+    df_depot_display = pd.concat([df_depot_display, new_row1], ignore_index=True)
+    df_fondspolice_display = pd.concat([df_fondspolice_display, new_row2], ignore_index=True)
+    fig, ax = plt.subplots(figsize=(10, 6), facecolor='#d6e8ee')
+    ax.set_facecolor('#d6e8ee')
+    ax.plot(df_depot_display['Jahr'], df_depot_display['Jahresende nach Kosten'], linestyle='-', color='#00b0f0')
+    ax.plot(df_fondspolice_display['Jahr'], df_fondspolice_display['Jahresende nach Kosten'], linestyle='-', color='#00a44a')
+    ax.plot(df_police_display['Jahr'], df_police_display['Jahresende nach Kosten'], linestyle='-', color='#92d050')
+    ax.set_xlabel(' ')
+    ax.set_ylabel(' ')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.legend()
+    plt.tight_layout()
+
+    # Manually set y-axis tick labels
+    yticks = ax.get_yticks()
+    ax.set_yticklabels([euro_formatter(y) for y in yticks])
+
+    # Display the plot in Streamlit
+    st.pyplot(fig)
 
 
 ###Markdowns
