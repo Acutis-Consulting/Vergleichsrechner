@@ -342,36 +342,11 @@ new_size = (int(logo.width * 1), int(logo.height * 1))
 resized_logo = logo.resize(new_size)
 st.image(resized_logo)
 
-# Display the DataFrame as a table in Streamlit
-st.markdown('### Fondspolice')
-df_police = df_police.round(2)
-st.dataframe(df_police)
 
-csv = df_police.to_csv(index=False)
-st.download_button(
-    label="Als CSV herunterladen",
-    data=csv,
-    file_name="police.csv",
-    mime="text/csv",
-)
-
-
-st.markdown('### Fondssparplan')
-df_depot = df_depot.round(2)
-st.dataframe(df_depot)
-
-csv = df_depot.to_csv(index=False)
-st.download_button(
-    label="Als CSV herunterladen ",
-    data=csv,
-    file_name="depot.csv",
-    mime="text/csv",
-)
 
 
 
 # Row A1
-st.title('Ergebnis')
 col1, col2, col3 = st.columns(3)
 
 fondspolice_rentenkapital = df_police.loc[i, 'Jahresende nach Kosten']
@@ -497,6 +472,32 @@ with col2:
     # Display the plot in Streamlit
     st.pyplot(fig)
 
+# Display the DataFrame as a table in Streamlit
+st.markdown('### Fondspolice')
+df_police = df_police.round(2)
+st.dataframe(df_police)
+
+csv = df_police.to_csv(index=False)
+st.download_button(
+    label="Als CSV herunterladen",
+    data=csv,
+    file_name="police.csv",
+    mime="text/csv",
+)
+
+
+st.markdown('### Fondssparplan')
+df_depot = df_depot.round(2)
+st.dataframe(df_depot)
+
+csv = df_depot.to_csv(index=False)
+st.download_button(
+    label="Als CSV herunterladen ",
+    data=csv,
+    file_name="depot.csv",
+    mime="text/csv",
+)
+
 ###Markdowns
 st.markdown("""
 <style>
@@ -505,7 +506,7 @@ div[data-testid="metric-container"] {
     border: 1px solid #CCCCCC;
     padding: 5% 5% 5% 10%;
     border-radius: 15px;
-    border-left: 0.5rem solid #fdff00 !important;
+    border-left: 0.5rem solid #405087 !important;
     box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
    overflow-wrap: break-word;
 }
