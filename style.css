@@ -14,17 +14,7 @@
     inset: 0px;
     overflow: hidden;
 }
-/* Card */
-/* Adapted from https://startbootstrap.com/theme/sb-admin-2 */
-div.st-emotion-cache-1r6slb0.e1f1d6gn3 {
-    background-color: #FFFFFF;
-    border: 1px solid #CCCCCC;
-    padding: 5% 5% 5% 10%;
-    border-radius: 5px;
-    border-left: 0.5rem solid #fdff00 !important;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
 
-}
 
 label.css-mkogse.e16fv1kl2 {
     color: #36b9cc !important;
