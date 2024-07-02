@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
-import plost
 import json
 import numpy as np
 import base64
