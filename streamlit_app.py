@@ -49,7 +49,7 @@ if uploaded_file:
 else:
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        einmalbeitrag_police = st.number_input('Einmalbeitrag',min_value=0,value=0)
+        einmalbeitrag_police = st.number_input('Einmalbeitrag',min_value=0,value=10000)
         rendite_mischfonds_police = (st.number_input('Rendite Mischfonds(%)',min_value=0.0,value=8.0)/100)
         rendite_rentenfonds_police = (st.number_input('Rendite Rentenfonds(%)',min_value=0.0,value=8.0)/100)
         rendite_aktienfonds_police = (st.number_input('Rendite Aktienfonds(%)',min_value=0.0,value=8.0)/100)
@@ -82,7 +82,7 @@ if uploaded_file:
 else:
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        einmalbeitrag_sparplan = st.number_input('Einmalbeitrag ',min_value=0,value=0)
+        einmalbeitrag_sparplan = st.number_input('Einmalbeitrag ',min_value=0,value=10000)
         rendite_aktienfonds_sparplan = (st.number_input('Rendite Aktienfonds(%) ',min_value=0.0,value=0.0)/100)
         rendite_mischfonds_sparplan = (st.number_input('Rendite Mischfonds(%) ',min_value=0.0,value=0.0)/100)
         rendite_rentenfonds_sparplan = (st.number_input('Rendite Rentenfonds(%) ',min_value=0.0,value=0.0)/100)
@@ -438,7 +438,7 @@ col1, col2 = st.columns(2)
 
 # Plot the bar chart with a light blue background
 with col1:
-    fig, ax = plt.subplots(figsize=(10, 6), facecolor='#d6e8ee')
+    fig, ax = plt.subplots(figsize=(10, 7), facecolor='#d6e8ee')
     ax.set_facecolor('#d6e8ee')
     bars = ax.bar(categories, values, color=['#92d050', '#00a44a', '#00b0f0'])
     ax.set_xlabel(' ')
@@ -457,6 +457,7 @@ with col1:
         plt.text(bar.get_x() + bar.get_width() / 2, yval + 10, f'{yval:,.0f} €'.replace(',', '.'), ha='center', va='bottom')
 
     # Display the plot in Streamlit
+    #if()
     st.pyplot(plt)
 
 with col2:
@@ -467,7 +468,7 @@ with col2:
     new_row2 = pd.DataFrame({'Jahr': [df_fondspolice_display['Jahr'].max() + 1], 'Jahresende nach Kosten': [fondspolice]})
     df_depot_display = pd.concat([df_depot_display, new_row1], ignore_index=True)
     df_fondspolice_display = pd.concat([df_fondspolice_display, new_row2], ignore_index=True)
-    fig, ax = plt.subplots(figsize=(10, 6), facecolor='#d6e8ee')
+    fig, ax = plt.subplots(figsize=(10, 7), facecolor='#d6e8ee')
     ax.set_facecolor('#d6e8ee')
     ax.plot(df_depot_display['Jahr'], df_depot_display['Jahresende nach Kosten'], linestyle='-', color='#00b0f0')
     ax.plot(df_fondspolice_display['Jahr'], df_fondspolice_display['Jahresende nach Kosten'], linestyle='-', color='#00a44a')
@@ -478,7 +479,7 @@ with col2:
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
-    ax.legend()
+    #ax.legend()
     plt.tight_layout()
 
     # Manually set y-axis tick labels
@@ -488,20 +489,3 @@ with col2:
     # Display the plot in Streamlit
     st.pyplot(fig)
 
-
-###Markdowns
-st.markdown("""
-<style>
-div[data-testid="metric-container"] {
-    background-color: #FFFFFF;
-    border: 1px solid #CCCCCC;
-    padding: 5% 5% 5% 10%;
-    border-radius: 15px;
-    border-left: 0.5rem solid #fdff00 !important;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-   overflow-wrap: break-word;
-}
-
-</style>
-"""
-            , unsafe_allow_html=True)
