@@ -7,7 +7,13 @@
     background-position: 4px 20px;
     background-color: #f0f2f6;
 }
-
+[data-testid="stAppViewContainer"] {
+    position: absolute;
+    background: #d6e8ee;
+    color: rgb(49, 51, 63);
+    inset: 0px;
+    overflow: hidden;
+}
 /* Card */
 /* Adapted from https://startbootstrap.com/theme/sb-admin-2 */
 div.st-emotion-cache-1r6slb0.e1f1d6gn3 {
