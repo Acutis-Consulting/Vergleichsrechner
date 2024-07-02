@@ -1,11 +1,9 @@
 import streamlit as st
 import pandas as pd
-from PIL import Image
 import json
 import numpy as np
 import base64
 import matplotlib.pyplot as plt
-import array
 
 
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
@@ -345,7 +343,7 @@ csv = df_police.to_csv(index=False)
 st.download_button(
     label="Als CSV herunterladen",
     data=csv,
-    file_name="data.csv",
+    file_name="police.csv",
     mime="text/csv",
 )
 
@@ -356,9 +354,9 @@ st.dataframe(df_depot)
 
 csv = df_depot.to_csv(index=False)
 st.download_button(
-    label="Als CSV herunterladen",
+    label="Als CSV herunterladen ",
     data=csv,
-    file_name="data.csv",
+    file_name="depot.csv",
     mime="text/csv",
 )
 
