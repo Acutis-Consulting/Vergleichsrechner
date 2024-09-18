@@ -51,6 +51,18 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown(
+    """
+    <style>
+    /* Change the background of the header and the surrounding area */
+    header, .css-18ni7ap {
+        background-color: #d6e8ee !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 custom_metric_html = """
     <div style="background-color: #F0F8FF;
                 border: 1px solid #CCCCCC;
