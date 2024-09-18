@@ -3,14 +3,73 @@ import pandas as pd
 from PIL import Image
 import json
 import numpy as np
+import hmac
 import base64
 import matplotlib.pyplot as plt
 
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store the password.
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if the password is validated.
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show input for password.
+    st.text_input(
+        "Passwort", type="password", on_change=password_entered, key="password"
+    )
+    if "password_correct" in st.session_state:
+        st.error("Passwort falsch test")
+    return False
+
+if not check_password():
+    st.stop()  # Do not continue if check_password is not True.
 
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-with open('style.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+    /* Set the background color of the whole page */
+    .main {
+        background-color: #d6e8ee;
+    }
+    /* Set the background color of the sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #f0f2f6;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+custom_metric_html = """
+    <div style="background-color: #F0F8FF;
+                border: 1px solid #CCCCCC;
+                padding: 20px;
+                border-radius: 15px;
+                margin-bottom: 10px;
+                width: 100%;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+                overflow-wrap: break-word;">
+        <div style="padding-left: 10px;">
+            <div style="font-weight: bold; color: #41528b; font-size: 16px;">
+                {label}
+            </div>
+            <div style="font-size: 36px; font-weight: bold; color: #41528b;">
+                {value}
+            </div>
+        </div>
+    </div>
+"""
 
 # Functions
 def format_german(value):
@@ -336,11 +395,11 @@ for i in range (laufzeit+1):
         df_depot.loc[i, 'Kapital abzüglich Steuer'] = df_depot.loc[i, 'Umschichten'] - df_depot.loc[i, 'Steuerlast '] #AF
 
 #Logo
-logo_path = "ressources/demak.png"  # Adjust the path to your logo file
-logo = Image.open(logo_path)
-new_size = (int(logo.width * 1), int(logo.height * 1))
-resized_logo = logo.resize(new_size)
-st.image(resized_logo)
+#logo_path = "Vergleichsrechner/ressources/demak.png"  # Adjust the path to your logo file
+#logo = Image.open(logo_path)
+#new_size = (int(logo.width * 1), int(logo.height * 1))
+#resized_logo = logo.resize(new_size)
+#st.image(resized_logo)
 
 
 
@@ -350,7 +409,9 @@ st.image(resized_logo)
 col1, col2, col3 = st.columns(3)
 
 fondspolice_rentenkapital = df_police.loc[i, 'Jahresende nach Kosten']
-col1.metric("Fondspolice Rentenkapital",format_german(fondspolice_rentenkapital))
+
+col1.markdown(custom_metric_html.format(label="Fondspolice Rentenkapital", value=format_german(fondspolice_rentenkapital)), unsafe_allow_html=True)
+
 
 fondspolice_ertraege = fondspolice_rentenkapital - einmalbeitrag_police
 fondspolice_teilfreistellung_result = fondspolice_ertraege * teilfreistellung_police
@@ -358,11 +419,10 @@ fondspolice_zu_besteuern_result = fondspolice_ertraege - fondspolice_teilfreiste
 fondspolice_hev_result = fondspolice_zu_besteuern_result/2
 fondspolice_steuerlast_result = fondspolice_hev_result * steuersatz_police
 fondspolice = fondspolice_rentenkapital - fondspolice_steuerlast_result
-col2.metric("Fondspolice",format_german(fondspolice))
+col2.markdown(custom_metric_html.format(label="Fondspolice", value=format_german(fondspolice)), unsafe_allow_html=True)
 
 fondssparplan = df_depot.loc[i, 'Kapital abzüglich Steuer']
-col3.metric("Fondssparplan",format_german(fondssparplan))
-
+col3.markdown(custom_metric_html.format(label="Fondssparplan", value=format_german(fondssparplan)), unsafe_allow_html=True)
 
 
 # Add a button to trigger the save
