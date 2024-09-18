@@ -35,7 +35,21 @@ if not check_password():
 
 st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 
-
+st.markdown(
+    """
+    <style>
+    /* Set the background color of the whole page */
+    .main {
+        background-color: #d6e8ee;
+    }
+    /* Set the background color of the sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #f0f2f6;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 custom_metric_html = """
     <div style="background-color: #F0F8FF;
