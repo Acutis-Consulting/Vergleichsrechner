@@ -8,7 +8,7 @@ import base64
 import matplotlib.pyplot as plt
 
 def check_password():
-    """Returns `True` if the user had the correct password."""
+    """Returns True if the user had the correct password."""
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
@@ -68,6 +68,7 @@ custom_metric_html = """
                 border: 1px solid #CCCCCC;
                 padding: 20px;
                 border-radius: 15px;
+                border-left: 0.5rem solid yellow;  /* Added yellow line */
                 margin-bottom: 10px;
                 width: 100%;
                 box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
@@ -96,12 +97,17 @@ def format_german(value):
 def euro_formatter(value):
     return f'€ {value:,.0f}'.replace(',', '.').replace('.', ',')
 
-st.sidebar.header('Vergleichsrechner Einmaleinlage `version 1`')
+st.sidebar.header('Vergleichsrechner Einmaleinlage version 1')
 
 uploaded_file = st.sidebar.file_uploader("Parameter Hochladen", type=["json"])
 if uploaded_file:
     # Reading the uploaded JSON file
     uploaded_data = json.load(uploaded_file)
+    # Load Umschichtungen into session_state
+    st.session_state['umschichtungen'] = uploaded_data.get('umschichtungen', [])
+else:
+    if 'umschichtungen' not in st.session_state:
+        st.session_state['umschichtungen'] = []
 
 # Eingabe Fondspolice
 st.sidebar.markdown('Fondspolice')
@@ -173,62 +179,91 @@ else:
 
 
 st.sidebar.subheader('Weitere Parameter')
-if uploaded_file:
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    if uploaded_file:
         laufzeit = st.number_input('Laufzeit',min_value=0,value=uploaded_data.get('laufzeit'))-1
-        anzahl_umschichtungen = st.number_input('Anzahl der Umschichtungen',min_value=0,value=uploaded_data.get('anzahl_umschichtungen'))
-        anteil_umschichtung =  (st.number_input('Anteil Umschichtung(%)',min_value=0.0,value=uploaded_data.get('anteil_umschichtung'))/100)
-else:
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
-        laufzeit = st.number_input('Laufzeit ',min_value=0,value=1)-1
-        anzahl_umschichtungen = st.number_input('Anzahl der Umschichtungen ',min_value=0,value=0)
-        anteil_umschichtung = (st.number_input('Anteil Umschichtung(%)',min_value=0.0,value=0.0)/100)
+    else:
+        laufzeit = st.number_input('Laufzeit',min_value=0,value=1)-1
 
+# Umschichtungen Section
 
+if 'umschichtungen' not in st.session_state:
+    st.session_state['umschichtungen'] = []
+
+if 'show_umschichtung_fields' not in st.session_state:
+    st.session_state['show_umschichtung_fields'] = False
+
+if st.sidebar.button('Umschichtungen hinzufügen'):
+    st.session_state['show_umschichtung_fields'] = True
+
+if st.session_state['show_umschichtung_fields']:
+    options = list(range(1, laufzeit+2))
+    jahr_der_umschichtung = st.sidebar.selectbox('Jahr der Umschichtung', options=options, index=0)
+    anteil_umschichtung_input = st.sidebar.number_input('Anteil Umschichtung(%)', min_value=0.0, max_value=100.0, value=0.0)
+    anteil_umschichtung = anteil_umschichtung_input / 100
+
+    if st.sidebar.button('Speichern'):
+        # Append the Umschichtung to the list
+        st.session_state['umschichtungen'].append({'jahr': jahr_der_umschichtung - 1, 'anteil': anteil_umschichtung})
+        # Hide the Umschichtung fields
+        st.session_state['show_umschichtung_fields'] = False
+
+if st.sidebar.button('Alle Umschichtungen löschen'):
+    st.session_state['umschichtungen'] = []
+
+# Display the list of Umschichtungen
+if st.session_state['umschichtungen']:
+    st.sidebar.write('Umschichtungen:')
+    for idx, ums in enumerate(st.session_state['umschichtungen']):
+        st.sidebar.write(f"Umschichtung {idx+1}: Jahr {ums['jahr']+1}, Anteil {ums['anteil']*100}%")
+        # Add a button to delete each Umschichtung
+        if st.sidebar.button(f'Umschichtung löschen', key=f'delete_{idx}'):
+            st.session_state['umschichtungen'].pop(idx)
+            # Since the list has changed, we need to break to avoid issues
+            break
 
 #Umschichtungen police
-def create_rollover_dataframe_police(laufzeit, anzahl_umschichtungen):
+def create_rollover_dataframe_police(laufzeit, ums_list):
     # Create a dataframe with "years" number of rows
     df_police = pd.DataFrame({'Jahr': range(0, laufzeit+1)})
 
-    # Calculate the positions for rollovers
-    sequence = np.linspace(1, laufzeit, anzahl_umschichtungen + 1, dtype=int)[1:-1]
-    positions = np.append(sequence, laufzeit)
-    #positions = [19,29,laufzeit] #TEST
-
-    # Initialize the rollover column with zeros
+    # Initialize the rollover columns
     df_police['UmschichtungJN'] = 0
+    df_police['AnteilUmschichtung'] = 0.0
 
-    # Set rollovers at calculated positions
-    df_police.loc[positions, 'UmschichtungJN'] = 1
+    # Set UmschichtungJN and AnteilUmschichtung based on ums_list
+    for ums in ums_list:
+        jahr = ums['jahr']
+        anteil = ums['anteil']
+        if 0 <= jahr <= laufzeit:
+            df_police.loc[df_police['Jahr'] == jahr, 'UmschichtungJN'] = 1
+            df_police.loc[df_police['Jahr'] == jahr, 'AnteilUmschichtung'] = anteil
 
     return df_police
 
-def create_rollover_dataframe_depot(laufzeit, anzahl_umschichtungen):
+def create_rollover_dataframe_depot(laufzeit, ums_list):
     # Create a dataframe with "years" number of rows
     df_depot = pd.DataFrame({'Jahr': range(0, laufzeit+1)})
 
-    # Calculate the positions for rollovers
-    sequence = np.linspace(1, laufzeit, anzahl_umschichtungen + 1, dtype=int)[1:-1]
-    positions = np.append(sequence, laufzeit)
-    #positions = [19,29,laufzeit] #TEST
-
-    # Initialize the rollover column with zeros
+    # Initialize the rollover columns
     df_depot['UmschichtungJN'] = 0
+    df_depot['AnteilUmschichtung'] = 0.0
 
-    # Set rollovers at calculated positions
-    df_depot.loc[positions, 'UmschichtungJN'] = 1
+    # Set UmschichtungJN and AnteilUmschichtung based on ums_list
+    for ums in ums_list:
+        jahr = ums['jahr']
+        anteil = ums['anteil']
+        if 0 <= jahr <= laufzeit:
+            df_depot.loc[df_depot['Jahr'] == jahr, 'UmschichtungJN'] = 1
+            df_depot.loc[df_depot['Jahr'] == jahr, 'AnteilUmschichtung'] = anteil
 
     return df_depot
 
 
 #POLICE TABELLE
-df_police = create_rollover_dataframe_police(laufzeit, anzahl_umschichtungen)
+df_police = create_rollover_dataframe_police(laufzeit, st.session_state['umschichtungen'])
 
-
-#df_police['Jahr'] = range(1, laufzeit +1)
 df_police['Jahresbeginn'] = 0
 df_police['Nach Beitragskosten und Abschlusskosten'] = 0
 df_police['Rendite'] = 0
@@ -252,7 +287,7 @@ for i in range (laufzeit+1):
         df_police.loc[i, 'Kosten Fondsguthaben'] = df_police.loc[i,'Jahresende']*effektivkosten_police #J
         df_police.loc[i, 'Jahresende nach Kosten'] = df_police.loc[i,'Jahresende']-df_police.loc[i,'Kosten Fondsguthaben'] #K
         df_police.loc[i, 'Einzahlung'] = einmalbeitrag_police #L
-        df_police.loc[i, 'Umschichtung'] = df_police.loc[i, 'UmschichtungJN']*anteil_umschichtung #M %-Zahl einfügen
+        df_police.loc[i, 'Umschichtung'] = df_police.loc[i, 'UmschichtungJN']*df_police.loc[i, 'AnteilUmschichtung'] #M
         df_police.loc[i, 'Umschichten oder Auszahlen'] = df_police.loc[i, 'Jahresende nach Kosten']*df_police.loc[i, 'Umschichtung'] #N
 
     else:
@@ -265,14 +300,12 @@ for i in range (laufzeit+1):
         df_police.loc[i, 'Kosten Fondsguthaben'] = df_police.loc[i,'Jahresende']*effektivkosten_police #J
         df_police.loc[i, 'Jahresende nach Kosten'] = df_police.loc[i,'Jahresende']-df_police.loc[i,'Kosten Fondsguthaben'] #K
         df_police.loc[i, 'Einzahlung'] = 0 #L
-        df_police.loc[i, 'Umschichtung'] = df_police.loc[i, 'UmschichtungJN']*anteil_umschichtung #M %-Zahl einfügen
+        df_police.loc[i, 'Umschichtung'] = df_police.loc[i, 'UmschichtungJN']*df_police.loc[i, 'AnteilUmschichtung'] #M
         df_police.loc[i, 'Umschichten oder Auszahlen'] = df_police.loc[i, 'Jahresende nach Kosten']*df_police.loc[i, 'Umschichtung'] #N
 
 #DEPOT TABELLE
-#df_depot = pd.DataFrame()
-df_depot = create_rollover_dataframe_depot(laufzeit, anzahl_umschichtungen)
+df_depot = create_rollover_dataframe_depot(laufzeit, st.session_state['umschichtungen'])
 
-#df_depot['Jahr'] = range(1, laufzeit+1)
 df_depot['Jahresbeginn'] = 0
 df_depot['Nach Orderprov. und Ausgabeaufschl.'] = 0
 df_depot['Rendite'] = 0
@@ -336,7 +369,7 @@ for i in range (laufzeit+1):
         df_depot.loc[i, 'Steuerlast'] = df_depot.loc[i, 'danach zu besteuern']*steuerlast_sparplan #U
         df_depot.loc[i, 'Jahresende nach Kosten'] = df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Kosten auf Fondsguthaben'] - df_depot.loc[i, 'Steuerlast']  #L
         df_depot.loc[i, 'Einzahlung'] = einmalbeitrag_sparplan #V
-        df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN']*anteil_umschichtung #W %-Zahl einfügen
+        df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN']*df_depot.loc[i, 'AnteilUmschichtung'] #W
         df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']*df_depot.loc[i, 'Umschichtung'] #X
         df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i, 'Wertsteigerung'] #NICHT ANZEIGEN
         df_depot.loc[i, 'Erträge'] = df_depot.loc[i, 'Erträgelaufend']*df_depot.loc[i, 'UmschichtungJN'] #Z
@@ -369,7 +402,14 @@ for i in range (laufzeit+1):
         else:
             df_depot.loc[i, 'Vorabpauschale'] = 0 #N
 
-        df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i-1, 'Vorabpauschalelaufend'] + df_depot.loc[i, 'Vorabpauschale']
+        #df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i-1, 'Vorabpauschalelaufend'] + df_depot.loc[i, 'Vorabpauschale']
+        if df_depot.loc[i-1, 'UmschichtungJN']==1:
+            df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i, 'Vorabpauschale']
+        else:
+            df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i-1, 'Vorabpauschalelaufend'] + df_depot.loc[i, 'Vorabpauschale']
+
+
+
         df_depot.loc[i, 'Teilfreistellung'] = df_depot.loc[i, 'Vorabpauschale']*teilfreistellung_aktienfonds_sparplan #O ############
         df_depot.loc[i, 'zu besteuern'] = df_depot.loc[i, 'Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung'] #P
         df_depot.loc[i, 'Freistellungsauftrag'] = freistellungsauftrag_sparplan #R
@@ -387,13 +427,20 @@ for i in range (laufzeit+1):
         df_depot.loc[i, 'Steuerlast'] = df_depot.loc[i, 'danach zu besteuern']*steuerlast_sparplan #U
         df_depot.loc[i, 'Jahresende nach Kosten'] = df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Kosten auf Fondsguthaben'] - df_depot.loc[i, 'Steuerlast']  #L
         df_depot.loc[i, 'Einzahlung'] = 0 #V
-        df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN']*anteil_umschichtung #W %-Zahl einfügen
+        df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN']*df_depot.loc[i, 'AnteilUmschichtung'] #W
         if i == laufzeit:
             df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten'] #X
         else:
             df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']*df_depot.loc[i, 'Umschichtung'] #X
-        df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i-1, 'Erträgelaufend'] + df_depot.loc[i, 'Wertsteigerung'] #NICHT ANZEIGEN
+        #df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i-1, 'Erträgelaufend'] + df_depot.loc[i, 'Wertsteigerung'] #NICHT ANZEIGEN
+        if df_depot.loc[i-1, 'UmschichtungJN']==1:
+            df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i, 'Wertsteigerung']
+        else:
+            df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i-1, 'Erträgelaufend'] + df_depot.loc[i, 'Wertsteigerung']
+
         df_depot.loc[i, 'Erträge'] = df_depot.loc[i, 'Erträgelaufend']*df_depot.loc[i, 'UmschichtungJN'] #Z
+
+
         df_depot.loc[i, 'minus Vorabpauschale'] = (df_depot.loc[i, 'Erträgelaufend'] - df_depot.loc[i, 'Vorabpauschalelaufend'])*df_depot.loc[i, 'UmschichtungJN'] #AA
         df_depot.loc[i, 'Teilfreistellung '] = df_depot.loc[i, 'minus Vorabpauschale']*teilfreistellung_aktienfonds_sparplan #AB
         df_depot.loc[i, 'zu besteuern '] = df_depot.loc[i, 'minus Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung '] #AC
@@ -405,17 +452,6 @@ for i in range (laufzeit+1):
 
         df_depot.loc[i, 'Steuerlast '] = df_depot.loc[i, 'nach Freistellungsauftrag']*steuerlast_sparplan #AE
         df_depot.loc[i, 'Kapital abzüglich Steuer'] = df_depot.loc[i, 'Umschichten'] - df_depot.loc[i, 'Steuerlast '] #AF
-
-#Logo
-#logo_path = "Vergleichsrechner/ressources/demak.png"  # Adjust the path to your logo file
-#logo = Image.open(logo_path)
-#new_size = (int(logo.width * 1), int(logo.height * 1))
-#resized_logo = logo.resize(new_size)
-#st.image(resized_logo)
-
-
-
-
 
 # Row A1
 col1, col2, col3 = st.columns(3)
@@ -455,7 +491,7 @@ if st.sidebar.button('Parameter Speichern'):
         'rendite_aktienfonds_sparplan': rendite_aktienfonds_sparplan*100,
         'rendite_mischfonds_sparplan': rendite_mischfonds_sparplan*100,
         'rendite_rentenfonds_sparplan': rendite_rentenfonds_sparplan*100,
-        'freistellungsauftrag_sparplan': freistellungsauftrag_sparplan*100,
+        'freistellungsauftrag_sparplan': freistellungsauftrag_sparplan,
         'teilfreistellung_aktienfonds_sparplan': teilfreistellung_aktienfonds_sparplan*100,
         'teilfreistellung_mischfonds_sparplan': teilfreistellung_mischfonds_sparplan*100,
         'teilfreistellung_rentenfonds_sparplan': teilfreistellung_rentenfonds_sparplan*100,
@@ -466,8 +502,7 @@ if st.sidebar.button('Parameter Speichern'):
         'steuerlast_auszahlung_sparplan': steuerlast_auszahlung_sparplan*100,
         ### Weitere Parameter
         'laufzeit': laufzeit+1,
-        'anzahl_umschichtungen': anzahl_umschichtungen,
-        'anteil_umschichtung': anteil_umschichtung*100
+        'umschichtungen': st.session_state['umschichtungen']
     }
 
     # Convert dictionary to JSON string
@@ -479,10 +514,6 @@ if st.sidebar.button('Parameter Speichern'):
     # Provide a link to download the JSON file
     href = f'<a href="data:file/json;base64,{b64}" download="parameters.json">Parameter Herunterladen</a>'
     st.sidebar.markdown(href, unsafe_allow_html=True)
-
-
-
-
 
 # Row C
 categories = ['Fondspolice Rentenkapital', 'Fondspolice', 'Fondssparplan']
@@ -512,7 +543,6 @@ with col1:
         plt.text(bar.get_x() + bar.get_width() / 2, yval + 10, f'{yval:,.0f} €'.replace(',', '.'), ha='center', va='bottom')
 
     # Display the plot in Streamlit
-    #if()
     st.pyplot(plt)
 
 with col2:
