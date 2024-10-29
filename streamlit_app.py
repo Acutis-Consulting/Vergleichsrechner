@@ -38,13 +38,18 @@ st.set_page_config(layout='wide', initial_sidebar_state='expanded')
 st.markdown(
     """
     <style>
-    /* Set the background color of the whole page */
-    .main {
+    /* Set the background color of the main content area */
+    div[data-testid="stAppViewContainer"] {
         background-color: #d6e8ee;
+        background-image: none;
     }
     /* Set the background color of the sidebar */
-    [data-testid="stSidebar"] {
+    div[data-testid="stSidebar"] > div:first-child {
         background-color: #f0f2f6;
+    }
+    /* Set the background color of the header */
+    header[data-testid="stHeader"] {
+        background-color: #d6e8ee;
     }
     </style>
     """,
