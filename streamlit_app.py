@@ -196,23 +196,23 @@ with col1:
 if 'umschichtungen' not in st.session_state:
     st.session_state['umschichtungen'] = []
 
-if 'show_umschichtung_fields' not in st.session_state:
-    st.session_state['show_umschichtung_fields'] = False
+st.sidebar.subheader('Umschichtungen')
 
-if st.sidebar.button('Umschichtungen hinzufügen'):
-    st.session_state['show_umschichtung_fields'] = True
+options = list(range(1, laufzeit+2))
+jahr_der_umschichtung = st.sidebar.selectbox('Jahr der Umschichtung', options=options, index=0)
+anteil_umschichtung_input = st.sidebar.number_input('Anteil Umschichtung(%)', min_value=0.0, max_value=100.0, value=0.0)
+anteil_umschichtung = anteil_umschichtung_input / 100
 
-if st.session_state['show_umschichtung_fields']:
-    options = list(range(1, laufzeit+2))
-    jahr_der_umschichtung = st.sidebar.selectbox('Jahr der Umschichtung', options=options, index=0)
-    anteil_umschichtung_input = st.sidebar.number_input('Anteil Umschichtung(%)', min_value=0.0, max_value=100.0, value=0.0)
-    anteil_umschichtung = anteil_umschichtung_input / 100
+if st.sidebar.button('Speichern'):
+    # Append the Umschichtung to the list
+    st.session_state['umschichtungen'].append({'jahr': jahr_der_umschichtung - 1, 'anteil': anteil_umschichtung})
+    # Optionally reset the input fields
+    st.session_state['jahr_der_umschichtung'] = options[0]
+    st.session_state['anteil_umschichtung_input'] = 0.0
 
-    if st.sidebar.button('Speichern'):
-        # Append the Umschichtung to the list
-        st.session_state['umschichtungen'].append({'jahr': jahr_der_umschichtung - 1, 'anteil': anteil_umschichtung})
-        # Hide the Umschichtung fields
-        st.session_state['show_umschichtung_fields'] = False
+if st.sidebar.button('Umschichtungen löschen'):
+    st.session_state['umschichtungen'] = []
+
 
 if st.sidebar.button('Alle Umschichtungen löschen'):
     st.session_state['umschichtungen'] = []
@@ -279,6 +279,11 @@ df_police['Jahresende nach Kosten'] = 0
 df_police['Einzahlung'] = 0
 df_police['Umschichtung'] = 0
 df_police['Umschichten oder Auszahlen'] = 0
+df_police['Einzahlungen'] = 0
+df_police['Erträge'] = 0
+df_police['Teilfreistellung'] = 0
+df_police['zu besteuern'] = 0
+df_police['HEV'] = 0
 df_police['Steuerlast'] = 0
 
 for i in range (laufzeit+1):
@@ -294,7 +299,24 @@ for i in range (laufzeit+1):
         df_police.loc[i, 'Einzahlung'] = einmalbeitrag_police #L
         df_police.loc[i, 'Umschichtung'] = df_police.loc[i, 'UmschichtungJN']*df_police.loc[i, 'AnteilUmschichtung'] #M
         df_police.loc[i, 'Umschichten oder Auszahlen'] = df_police.loc[i, 'Jahresende nach Kosten']*df_police.loc[i, 'Umschichtung'] #N
-
+    elif i == laufzeit:
+        df_police.loc[i, 'Jahr'] = i+1 #A
+        df_police.loc[i,'Jahresbeginn'] = df_police.loc[i-1, 'Jahresende nach Kosten'] #B
+        df_police.loc[i,'Nach Beitragskosten und Abschlusskosten'] = df_police.loc[i,'Jahresbeginn'] #DELETE? #D
+        df_police.loc[i, 'Rendite'] = rendite_aktienfonds_police #E
+        df_police.loc[i, 'Wertsteigerung'] = df_police.loc[i,'Nach Beitragskosten und Abschlusskosten']*df_police.loc[i,'Rendite'] #F
+        df_police.loc[i, 'Jahresende'] = df_police.loc[i,'Nach Beitragskosten und Abschlusskosten']+df_police.loc[i,'Wertsteigerung'] #G
+        df_police.loc[i, 'Kosten Fondsguthaben'] = df_police.loc[i,'Jahresende']*effektivkosten_police #J
+        df_police.loc[i, 'Jahresende nach Kosten'] = df_police.loc[i,'Jahresende']-df_police.loc[i,'Kosten Fondsguthaben'] #K
+        df_police.loc[i, 'Einzahlung'] = 0 #L
+        df_police.loc[i, 'Umschichtung'] = df_police.loc[i, 'UmschichtungJN']*df_police.loc[i, 'AnteilUmschichtung'] #M
+        df_police.loc[i, 'Umschichten oder Auszahlen'] = df_police.loc[i, 'Jahresende nach Kosten']*df_police.loc[i, 'Umschichtung'] #N
+        df_police.loc[i, 'Einzahlungen'] = einmalbeitrag_police
+        df_police.loc[i, 'Erträge'] = df_police.loc[i, 'Umschichten oder Auszahlen'] - df_police.loc[i, 'Einzahlungen']
+        df_police.loc[i, 'Teilfreistellung'] = df_police.loc[i, 'Erträge']*teilfreistellung_police
+        df_police.loc[i, 'zu besteuern'] = df_police.loc[i, 'Erträge']-df_police.loc[i, 'Teilfreistellung']
+        df_police.loc[i, 'HEV'] = df_police.loc[i, 'zu besteuern']/2
+        df_police.loc[i, 'Steuerlast'] = df_police.loc[i, 'HEV']*steuersatz_police
     else:
         df_police.loc[i, 'Jahr'] = i+1 #A
         df_police.loc[i,'Jahresbeginn'] = df_police.loc[i-1, 'Jahresende nach Kosten'] #B
