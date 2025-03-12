@@ -362,123 +362,117 @@ df_depot['nach Freistellungsauftrag'] = 0
 df_depot['Steuerlast '] = 0
 df_depot['Kapital abzüglich Steuer'] = 0
 
-for i in range (laufzeit+1):
+for i in range(laufzeit + 1):
     if i == 0:
-        df_depot.loc[i, 'Jahr'] = i+1 #A
-        df_depot.loc[i, 'Jahresbeginn'] = einmalbeitrag_sparplan #B
-        df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] = df_depot.loc[i, 'Jahresbeginn'] #E
-        df_depot.loc[i, 'Rendite'] = rendite_aktienfonds_sparplan #F
-        df_depot.loc[i, 'Wertsteigerung'] = df_depot.loc[i, 'Jahresbeginn'] * rendite_aktienfonds_sparplan #G
-        df_depot.loc[i, 'Jahresende'] = df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] + df_depot.loc[i, 'Wertsteigerung'] #H
-        df_depot.loc[i, 'Kosten auf Fondsguthaben'] = df_depot.loc[i, 'Jahresende'] * effektivkosten_sparplan #K
-        df_depot.loc[i, 'Basisertrag'] = df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']*0.7*basiszins_sparplan #M
-        if(df_depot.loc[i, 'Jahresende']-df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) <= df_depot.loc[i, 'Basisertrag'] and (df_depot.loc[i, 'Jahresende']-df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) >= 0:
-            df_depot.loc[i, 'Vorabpauschale'] = 0  #N
-        elif(df_depot.loc[i, 'Jahresende']-df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'])>=df_depot.loc[i, 'Basisertrag']:
-            df_depot.loc[i, 'Vorabpauschale'] = df_depot.loc[i, 'Basisertrag'] #N
+        df_depot.loc[i, 'Jahr'] = i + 1  # A
+        df_depot.loc[i, 'Jahresbeginn'] = einmalbeitrag_sparplan  # B
+        df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] = df_depot.loc[i, 'Jahresbeginn']  # E
+        df_depot.loc[i, 'Rendite'] = rendite_aktienfonds_sparplan  # F
+        df_depot.loc[i, 'Wertsteigerung'] = df_depot.loc[i, 'Jahresbeginn'] * rendite_aktienfonds_sparplan  # G
+        df_depot.loc[i, 'Jahresende'] = df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] + df_depot.loc[i, 'Wertsteigerung']  # H
+        df_depot.loc[i, 'Kosten auf Fondsguthaben'] = df_depot.loc[i, 'Jahresende'] * effektivkosten_sparplan  # K
+        df_depot.loc[i, 'Basisertrag'] = df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] * 0.7 * basiszins_sparplan  # M
+        # Calculation for Vorabpauschale and subsequent steps...
+        if (df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) <= df_depot.loc[i, 'Basisertrag'] and \
+                (df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) >= 0:
+            df_depot.loc[i, 'Vorabpauschale'] = 0  # N
         else:
-            df_depot.loc[i, 'Vorabpauschale'] = 0 #N
+            df_depot.loc[i, 'Vorabpauschale'] = df_depot.loc[i, 'Basisertrag']  # N
         df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i, 'Vorabpauschale']
-        df_depot.loc[i, 'Teilfreistellung'] = df_depot.loc[i, 'Vorabpauschale']*teilfreistellung_aktienfonds_sparplan #O
-        df_depot.loc[i, 'zu besteuern'] = df_depot.loc[i, 'Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung'] #P
-        df_depot.loc[i, 'Freistellungsauftrag'] = freistellungsauftrag_sparplan #R
-
+        df_depot.loc[i, 'Teilfreistellung'] = df_depot.loc[i, 'Vorabpauschale'] * teilfreistellung_aktienfonds_sparplan  # O
+        df_depot.loc[i, 'zu besteuern'] = df_depot.loc[i, 'Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung']  # P
+        df_depot.loc[i, 'Freistellungsauftrag'] = freistellungsauftrag_sparplan  # R
         if df_depot.loc[i, 'zu besteuern'] >= df_depot.loc[i, 'Freistellungsauftrag']:
             df_depot.loc[i, 'Freistellung übrig'] = 0
         else:
-            df_depot.loc[i, 'Freistellung übrig'] = df_depot.loc[i, 'Freistellungsauftrag'] - df_depot.loc[i, 'zu besteuern'] #S
-
+            df_depot.loc[i, 'Freistellung übrig'] = df_depot.loc[i, 'Freistellungsauftrag'] - df_depot.loc[i, 'zu besteuern']  # S
         if df_depot.loc[i, 'Freistellungsauftrag'] >= df_depot.loc[i, 'zu besteuern']:
-            df_depot.loc[i, 'danach zu besteuern'] = 0 #T
+            df_depot.loc[i, 'danach zu besteuern'] = 0  # T
         else:
-            df_depot.loc[i, 'danach zu besteuern'] = df_depot.loc[i, 'zu besteuern'] - df_depot.loc[i, 'Freistellungsauftrag'] #T
-
-        df_depot.loc[i, 'Steuerlast'] = df_depot.loc[i, 'danach zu besteuern']*steuerlast_sparplan #U
-        df_depot.loc[i, 'Jahresende nach Kosten'] = df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Kosten auf Fondsguthaben'] - df_depot.loc[i, 'Steuerlast']  #L
-        df_depot.loc[i, 'Einzahlung'] = einmalbeitrag_sparplan #V
-        df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN']*df_depot.loc[i, 'AnteilUmschichtung'] #W
-        df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']*df_depot.loc[i, 'Umschichtung'] #X
-        df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i, 'Wertsteigerung'] #NICHT ANZEIGEN
-        df_depot.loc[i, 'Erträge'] = df_depot.loc[i, 'Erträgelaufend']*df_depot.loc[i, 'UmschichtungJN'] #Z
-        df_depot.loc[i, 'minus Vorabpauschale'] = (df_depot.loc[i, 'Erträgelaufend'] - df_depot.loc[i, 'Vorabpauschalelaufend'])*df_depot.loc[i, 'UmschichtungJN'] #AA
-        df_depot.loc[i, 'Teilfreistellung '] = df_depot.loc[i, 'minus Vorabpauschale']*teilfreistellung_aktienfonds_sparplan #AB
-        df_depot.loc[i, 'zu besteuern '] = df_depot.loc[i, 'minus Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung '] #AC
+            df_depot.loc[i, 'danach zu besteuern'] = df_depot.loc[i, 'zu besteuern'] - df_depot.loc[i, 'Freistellungsauftrag']  # T
+        df_depot.loc[i, 'Steuerlast'] = df_depot.loc[i, 'danach zu besteuern'] * steuerlast_sparplan  # U
+        df_depot.loc[i, 'Jahresende nach Kosten'] = df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Kosten auf Fondsguthaben'] - df_depot.loc[i, 'Steuerlast']  # L
+        df_depot.loc[i, 'Einzahlung'] = einmalbeitrag_sparplan  # V
+        # For the Umschichtung in the first year: if the entire period is just one year, enforce fixed reallocation.
+        if laufzeit == 0:
+            df_depot.loc[i, 'Umschichtung'] = 1
+            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']
+        else:
+            df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN'] * df_depot.loc[i, 'AnteilUmschichtung']  # W
+            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten'] * df_depot.loc[i, 'Umschichtung']  # X
+        # Continue with remaining calculations...
+        df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i, 'Wertsteigerung']
+        df_depot.loc[i, 'Erträge'] = df_depot.loc[i, 'Erträgelaufend'] * df_depot.loc[i, 'UmschichtungJN']  # Z
+        df_depot.loc[i, 'minus Vorabpauschale'] = (df_depot.loc[i, 'Erträgelaufend'] - df_depot.loc[i, 'Vorabpauschalelaufend']) * df_depot.loc[i, 'UmschichtungJN']  # AA
+        df_depot.loc[i, 'Teilfreistellung '] = df_depot.loc[i, 'minus Vorabpauschale'] * teilfreistellung_aktienfonds_sparplan  # AB
+        df_depot.loc[i, 'zu besteuern '] = df_depot.loc[i, 'minus Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung ']  # AC
 
         if df_depot.loc[i, 'Freistellung übrig'] > df_depot.loc[i, 'zu besteuern ']:
-            df_depot.loc[i, 'nach Freistellungsauftrag'] = 0 #AD
+            df_depot.loc[i, 'nach Freistellungsauftrag'] = 0  # AD
         else:
-            df_depot.loc[i, 'nach Freistellungsauftrag'] = df_depot.loc[i, 'zu besteuern '] - df_depot.loc[i, 'Freistellung übrig'] #AD
+            df_depot.loc[i, 'nach Freistellungsauftrag'] = df_depot.loc[i, 'zu besteuern '] - df_depot.loc[i, 'Freistellung übrig']  # AD
 
-        df_depot.loc[i, 'Steuerlast '] = df_depot.loc[i, 'nach Freistellungsauftrag']*steuerlast_sparplan #AE
-        df_depot.loc[i, 'Kapital abzüglich Steuer'] = df_depot.loc[i, 'Umschichten'] - df_depot.loc[i, 'Steuerlast '] #AF
+        df_depot.loc[i, 'Steuerlast '] = df_depot.loc[i, 'nach Freistellungsauftrag'] * steuerlast_sparplan  # AE
+        df_depot.loc[i, 'Kapital abzüglich Steuer'] = df_depot.loc[i, 'Umschichten'] - df_depot.loc[i, 'Steuerlast ']  # AF
 
     else:
-        df_depot.loc[i, 'Jahr'] = i+1 #A
-        df_depot.loc[i,'Jahresbeginn'] = df_depot.loc[i-1, 'Jahresende nach Kosten'] - df_depot.loc[i-1, 'Steuerlast '] #B
-        df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] = df_depot.loc[i, 'Jahresbeginn'] #E
-        df_depot.loc[i, 'Rendite'] = rendite_aktienfonds_sparplan #F
-        df_depot.loc[i, 'Wertsteigerung'] = df_depot.loc[i, 'Jahresbeginn'] * rendite_aktienfonds_sparplan #G
-        df_depot.loc[i, 'Jahresende'] = df_depot.loc[i, 'Jahresbeginn'] + df_depot.loc[i, 'Wertsteigerung'] #H
-        df_depot.loc[i, 'Kosten auf Fondsguthaben'] = df_depot.loc[i, 'Jahresende'] * effektivkosten_sparplan #K
-        df_depot.loc[i, 'Basisertrag'] = df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']*0.7*basiszins_sparplan #M
-
-        if(df_depot.loc[i, 'Jahresende']-df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) <= df_depot.loc[i, 'Basisertrag'] and (df_depot.loc[i, 'Jahresende']-df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) >= 0:
-            df_depot.loc[i, 'Vorabpauschale'] = 0  #N
-        elif(df_depot.loc[i, 'Jahresende']-df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) >= df_depot.loc[i, 'Basisertrag']:
-            df_depot.loc[i, 'Vorabpauschale'] = df_depot.loc[i, 'Basisertrag'] #N
+        df_depot.loc[i, 'Jahr'] = i + 1  # A
+        df_depot.loc[i, 'Jahresbeginn'] = df_depot.loc[i - 1, 'Jahresende nach Kosten'] - df_depot.loc[i - 1, 'Steuerlast ']  # B
+        df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] = df_depot.loc[i, 'Jahresbeginn']  # E
+        df_depot.loc[i, 'Rendite'] = rendite_aktienfonds_sparplan  # F
+        df_depot.loc[i, 'Wertsteigerung'] = df_depot.loc[i, 'Jahresbeginn'] * rendite_aktienfonds_sparplan  # G
+        df_depot.loc[i, 'Jahresende'] = df_depot.loc[i, 'Jahresbeginn'] + df_depot.loc[i, 'Wertsteigerung']  # H
+        df_depot.loc[i, 'Kosten auf Fondsguthaben'] = df_depot.loc[i, 'Jahresende'] * effektivkosten_sparplan  # K
+        df_depot.loc[i, 'Basisertrag'] = df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.'] * 0.7 * basiszins_sparplan  # M
+        if (df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) <= df_depot.loc[i, 'Basisertrag'] and \
+                (df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Nach Orderprov. und Ausgabeaufschl.']) >= 0:
+            df_depot.loc[i, 'Vorabpauschale'] = 0  # N
         else:
-            df_depot.loc[i, 'Vorabpauschale'] = 0 #N
-
-        #df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i-1, 'Vorabpauschalelaufend'] + df_depot.loc[i, 'Vorabpauschale']
-        if df_depot.loc[i-1, 'UmschichtungJN']==1:
+            df_depot.loc[i, 'Vorabpauschale'] = df_depot.loc[i, 'Basisertrag']  # N
+        # Update the running sum of Vorabpauschale:
+        if df_depot.loc[i - 1, 'UmschichtungJN'] == 1:
             df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i, 'Vorabpauschale']
         else:
-            df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i-1, 'Vorabpauschalelaufend'] + df_depot.loc[i, 'Vorabpauschale']
-
-
-
-        df_depot.loc[i, 'Teilfreistellung'] = df_depot.loc[i, 'Vorabpauschale']*teilfreistellung_aktienfonds_sparplan #O ############
-        df_depot.loc[i, 'zu besteuern'] = df_depot.loc[i, 'Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung'] #P
-        df_depot.loc[i, 'Freistellungsauftrag'] = freistellungsauftrag_sparplan #R
-
+            df_depot.loc[i, 'Vorabpauschalelaufend'] = df_depot.loc[i - 1, 'Vorabpauschalelaufend'] + df_depot.loc[i, 'Vorabpauschale']
+        df_depot.loc[i, 'Teilfreistellung'] = df_depot.loc[i, 'Vorabpauschale'] * teilfreistellung_aktienfonds_sparplan  # O
+        df_depot.loc[i, 'zu besteuern'] = df_depot.loc[i, 'Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung']  # P
+        df_depot.loc[i, 'Freistellungsauftrag'] = freistellungsauftrag_sparplan  # R
         if df_depot.loc[i, 'zu besteuern'] >= df_depot.loc[i, 'Freistellungsauftrag']:
             df_depot.loc[i, 'Freistellung übrig'] = 0
         else:
-            df_depot.loc[i, 'Freistellung übrig'] = df_depot.loc[i, 'Freistellungsauftrag'] - df_depot.loc[i, 'zu besteuern'] #S
-
+            df_depot.loc[i, 'Freistellung übrig'] = df_depot.loc[i, 'Freistellungsauftrag'] - df_depot.loc[i, 'zu besteuern']  # S
         if df_depot.loc[i, 'Freistellungsauftrag'] >= df_depot.loc[i, 'zu besteuern']:
-            df_depot.loc[i, 'danach zu besteuern'] = 0 #T
+            df_depot.loc[i, 'danach zu besteuern'] = 0  # T
         else:
-            df_depot.loc[i, 'danach zu besteuern'] = df_depot.loc[i, 'zu besteuern'] - df_depot.loc[i, 'Freistellungsauftrag'] #T
+            df_depot.loc[i, 'danach zu besteuern'] = df_depot.loc[i, 'zu besteuern'] - df_depot.loc[i, 'Freistellungsauftrag']  # T
+        df_depot.loc[i, 'Steuerlast'] = df_depot.loc[i, 'danach zu besteuern'] * steuerlast_sparplan  # U
+        df_depot.loc[i, 'Jahresende nach Kosten'] = df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Kosten auf Fondsguthaben'] - df_depot.loc[i, 'Steuerlast']  # L
+        df_depot.loc[i, 'Einzahlung'] = 0  # V
 
-        df_depot.loc[i, 'Steuerlast'] = df_depot.loc[i, 'danach zu besteuern']*steuerlast_sparplan #U
-        df_depot.loc[i, 'Jahresende nach Kosten'] = df_depot.loc[i, 'Jahresende'] - df_depot.loc[i, 'Kosten auf Fondsguthaben'] - df_depot.loc[i, 'Steuerlast']  #L
-        df_depot.loc[i, 'Einzahlung'] = 0 #V
-        df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN']*df_depot.loc[i, 'AnteilUmschichtung'] #W
+        # For Umschichtung: force a fixed 100% reallocation in the last year
         if i == laufzeit:
-            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten'] #X
+            df_depot.loc[i, 'Umschichtung'] = 1
+            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']
         else:
-            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten']*df_depot.loc[i, 'Umschichtung'] #X
-        #df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i-1, 'Erträgelaufend'] + df_depot.loc[i, 'Wertsteigerung'] #NICHT ANZEIGEN
-        if df_depot.loc[i-1, 'UmschichtungJN']==1:
+            df_depot.loc[i, 'Umschichtung'] = df_depot.loc[i, 'UmschichtungJN'] * df_depot.loc[i, 'AnteilUmschichtung']  # W
+            df_depot.loc[i, 'Umschichten'] = df_depot.loc[i, 'Jahresende nach Kosten'] * df_depot.loc[i, 'Umschichtung']  # X
+
+        if df_depot.loc[i - 1, 'UmschichtungJN'] == 1:
             df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i, 'Wertsteigerung']
         else:
-            df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i-1, 'Erträgelaufend'] + df_depot.loc[i, 'Wertsteigerung']
-
-        df_depot.loc[i, 'Erträge'] = df_depot.loc[i, 'Erträgelaufend']*df_depot.loc[i, 'UmschichtungJN'] #Z
-
-
-        df_depot.loc[i, 'minus Vorabpauschale'] = (df_depot.loc[i, 'Erträgelaufend'] - df_depot.loc[i, 'Vorabpauschalelaufend'])*df_depot.loc[i, 'UmschichtungJN'] #AA
-        df_depot.loc[i, 'Teilfreistellung '] = df_depot.loc[i, 'minus Vorabpauschale']*teilfreistellung_aktienfonds_sparplan #AB
-        df_depot.loc[i, 'zu besteuern '] = df_depot.loc[i, 'minus Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung '] #AC
+            df_depot.loc[i, 'Erträgelaufend'] = df_depot.loc[i - 1, 'Erträgelaufend'] + df_depot.loc[i, 'Wertsteigerung']
+        df_depot.loc[i, 'Erträge'] = df_depot.loc[i, 'Erträgelaufend'] * df_depot.loc[i, 'Umschichtung']  # Z
+        df_depot.loc[i, 'minus Vorabpauschale'] = (df_depot.loc[i, 'Erträgelaufend'] - df_depot.loc[i, 'Vorabpauschalelaufend']) * df_depot.loc[i, 'Umschichtung']  # AA
+        df_depot.loc[i, 'Teilfreistellung '] = df_depot.loc[i, 'minus Vorabpauschale'] * teilfreistellung_aktienfonds_sparplan  # AB
+        df_depot.loc[i, 'zu besteuern '] = df_depot.loc[i, 'minus Vorabpauschale'] - df_depot.loc[i, 'Teilfreistellung ']  # AC
 
         if df_depot.loc[i, 'Freistellung übrig'] > df_depot.loc[i, 'zu besteuern ']:
-            df_depot.loc[i, 'nach Freistellungsauftrag'] = 0 #AD
+            df_depot.loc[i, 'nach Freistellungsauftrag'] = 0  # AD
         else:
-            df_depot.loc[i, 'nach Freistellungsauftrag'] = df_depot.loc[i, 'zu besteuern '] - df_depot.loc[i, 'Freistellung übrig'] #AD
+            df_depot.loc[i, 'nach Freistellungsauftrag'] = df_depot.loc[i, 'zu besteuern '] - df_depot.loc[i, 'Freistellung übrig']  # AD
 
-        df_depot.loc[i, 'Steuerlast '] = df_depot.loc[i, 'nach Freistellungsauftrag']*steuerlast_sparplan #AE
-        df_depot.loc[i, 'Kapital abzüglich Steuer'] = df_depot.loc[i, 'Umschichten'] - df_depot.loc[i, 'Steuerlast '] #AF
+        df_depot.loc[i, 'Steuerlast '] = df_depot.loc[i, 'nach Freistellungsauftrag'] * steuerlast_sparplan  # AE
+        df_depot.loc[i, 'Kapital abzüglich Steuer'] = df_depot.loc[i, 'Umschichten'] - df_depot.loc[i, 'Steuerlast ']  # AF
 
 # Row A1
 col1, col2, col3 = st.columns(3)
