@@ -219,21 +219,8 @@ if st.sidebar.button('Speichern'):
     })
     st.session_state['jahr_der_umschichtung'] = options[0]
 
-if st.sidebar.button('Umschichtungen löschen'):
-    st.session_state['umschichtungen'] = []
-
 if st.sidebar.button('Alle Umschichtungen löschen'):
     st.session_state['umschichtungen'] = []
-
-if st.session_state['umschichtungen']:
-    st.sidebar.write('Umschichtungen:')
-    for idx, ums in enumerate(st.session_state['umschichtungen']):
-        st.sidebar.write(
-            f"Umschichtung {idx+1}: Jahr {ums['jahr']+1}, Anteil {ums['anteil']*100}%, Umschichten in: {ums['umschichten_in']}"
-        )
-        if st.sidebar.button(f'Umschichtung löschen', key=f'delete_{idx}'):
-            st.session_state['umschichtungen'].pop(idx)
-            break
 
 def create_rollover_dataframe_police(laufzeit, ums_list):
     df_police = pd.DataFrame({'Jahr': range(0, laufzeit+1)})
